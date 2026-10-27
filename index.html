@@ -3811,7 +3811,23 @@ function korvelChequeoFotos(){
     var lv = cur;
     var oppIdx = dir==='l' ? (lv-1+n)%n : (lv+1)%n;
     cur = dir==='l' ? (cur+1)%n : (cur-1+n)%n;
-    snap(cards[oppIdx], 'hidden');
+    /* BUG REAL, visto en producción (TifosiKids): con n>=4 el índice
+       opuesto (oppIdx) queda genuinamente fuera de vista tras rotar —
+       "hidden" es su estado correcto y se le puede "teletransportar" ahí
+       sin transición. Pero con el MÍNIMO de 3 tarjetas no existe ningún
+       estado 'hidden': las 3 siempre son active/next-r/prev-l, así que el
+       índice opuesto en realidad pasa de un lado visible al otro lado
+       visible. Si se le fuerza a 'hidden' aquí sin corregirlo después, se
+       queda invisible para siempre y el abanico se ve con 2 tarjetas tras
+       el primer clic — nunca vuelvas a este hardcode. Se calcula su
+       destino real con getS() y solo se "teletransporta" cuando ese
+       destino de verdad es 'hidden'. */
+    var oppFinal = getS(oppIdx);
+    if (oppFinal === 'hidden') {
+      snap(cards[oppIdx], 'hidden');
+    } else {
+      cards[oppIdx].dataset.s = oppFinal;
+    }
     cards[lv].dataset.s = dir==='l' ? 'out-l' : 'out-r';
     cards.forEach(function(c,i){ if(i!==lv && i!==oppIdx) c.dataset.s = getS(i); });
     pips.forEach(function(p,i){ p.classList.toggle('active', i===cur); });
